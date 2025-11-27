@@ -1,0 +1,11 @@
+/.DS_Store
+/.env
+/.idea
+/.prettierrc
+/.venv
+/debug_ai_real.py
+/debug_notion.py
+/debug_notion_client.py
+/debug_numpy.py
+/logs
+/test_ai_connection.py
