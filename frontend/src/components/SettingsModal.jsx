@@ -5,13 +5,17 @@ import './SettingsModal.css'; // We'll create this for basic styling
 export function SettingsModal({ isOpen, onClose }) {
     const { t, i18n } = useTranslation();
     const [config, setConfig] = useState(null);
+    const [envVars, setEnvVars] = useState(null);
     const [activeTab, setActiveTab] = useState('general');
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showToken, setShowToken] = useState(false);
+    const [showApiKey, setShowApiKey] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             loadConfig();
+            loadEnvVars();
         }
     }, [isOpen]);
 
@@ -28,16 +32,37 @@ export function SettingsModal({ isOpen, onClose }) {
         }
     };
 
+    const loadEnvVars = async () => {
+        try {
+            const res = await fetch('/api/env');
+            const data = await res.json();
+            setEnvVars(data);
+        } catch (err) {
+            console.error("Error loading env vars:", err);
+        }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Save params.yaml config
             await fetch('/api/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config)
             });
+
+            // Save .env variables
+            if (envVars) {
+                await fetch('/api/env', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(envVars)
+                });
+            }
+
             onClose();
-            // Optional: Reload page to apply all changes cleanly
+            // Reload page to apply all changes cleanly
             window.location.reload();
         } catch (err) {
             console.error("Error saving config:", err);
@@ -67,6 +92,13 @@ export function SettingsModal({ isOpen, onClose }) {
         // We don't necessarily save this to params.yaml unless we want it persistent across server restarts
         // For now, let's just change it in the session. 
         // If we want to save it, we'd need a 'language' field in params.yaml.
+    };
+
+    const handleEnvChange = (key, value) => {
+        setEnvVars(prev => ({
+            ...prev,
+            [key]: value
+        }));
     };
 
     if (!isOpen) return null;
@@ -200,8 +232,39 @@ export function SettingsModal({ isOpen, onClose }) {
                                 </div>
                             )}
 
-                            {activeTab === 'ai' && config && config.ai && (
+                            {activeTab === 'ai' && envVars && config && config.ai && (
                                 <div className="settings-section">
+                                    <h3>HuggingFace Credentials</h3>
+                                    <div className="form-group">
+                                        <label>API Key</label>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <input
+                                                type={showApiKey ? "text" : "password"}
+                                                value={envVars.HF_API_KEY || ''}
+                                                onChange={(e) => handleEnvChange('HF_API_KEY', e.target.value)}
+                                                placeholder="hf_..."
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowApiKey(!showApiKey)}
+                                                style={{ padding: '8px 12px' }}
+                                            >
+                                                {showApiKey ? '👁️' : '👁️‍🗨️'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>HuggingFace Model</label>
+                                        <input
+                                            type="text"
+                                            value={envVars.HF_MODEL || ''}
+                                            onChange={(e) => handleEnvChange('HF_MODEL', e.target.value)}
+                                            placeholder="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+                                        />
+                                    </div>
+
+                                    <h3>Local AI Settings</h3>
                                     <div className="form-group">
                                         <label>Model Name</label>
                                         <input
@@ -229,23 +292,53 @@ export function SettingsModal({ isOpen, onClose }) {
                                 </div>
                             )}
 
-                            {activeTab === 'notion' && config && config.notion && (
+                            {activeTab === 'notion' && envVars && config && config.notion && (
                                 <div className="settings-section">
+                                    <h3>Notion Credentials</h3>
+                                    <div className="form-group">
+                                        <label>Notion Token</label>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <input
+                                                type={showToken ? "text" : "password"}
+                                                value={envVars.NOTION_TOKEN || ''}
+                                                onChange={(e) => handleEnvChange('NOTION_TOKEN', e.target.value)}
+                                                placeholder="ntn_..."
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowToken(!showToken)}
+                                                style={{ padding: '8px 12px' }}
+                                            >
+                                                {showToken ? '👁️' : '👁️‍🗨️'}
+                                            </button>
+                                        </div>
+                                    </div>
                                     <div className="form-group">
                                         <label>Database ID</label>
                                         <input
                                             type="text"
-                                            value={config.notion.NOTION_DATABASE || ''}
-                                            disabled
-                                            title="Set via Environment Variable"
+                                            value={envVars.DATABASE_ID || ''}
+                                            onChange={(e) => handleEnvChange('DATABASE_ID', e.target.value)}
+                                            placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                                         />
                                     </div>
+
+                                    <h3>Notion Properties</h3>
                                     <div className="form-group">
                                         <label>Title Property</label>
                                         <input
                                             type="text"
                                             value={config.notion.title_property}
                                             onChange={(e) => handleChange('notion.title_property', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Links Property</label>
+                                        <input
+                                            type="text"
+                                            value={config.notion.links_property}
+                                            onChange={(e) => handleChange('notion.links_property', e.target.value)}
                                         />
                                     </div>
                                 </div>

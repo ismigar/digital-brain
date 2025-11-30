@@ -30,7 +30,10 @@ if ENABLED_CORS:
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 from backend.api.config_routes import config_bp
+from backend.api.env_routes import env_bp
+
 app.register_blueprint(config_bp, url_prefix='/api')
+app.register_blueprint(env_bp, url_prefix='/api')
 
 # ──────────────── ÚNICA RUTA /api/graph ────────────────
 @app.get("/api/graph")
