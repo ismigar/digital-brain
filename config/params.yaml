@@ -72,8 +72,6 @@ logging_level: debug
 mail_from: null
 mail_to: null
 notion:
-  NOTION_DATABASE: 431979bd26aa429190b1d728935006af
-  NOTION_TOKEN: ${NOTION_TOKEN}  # Set this as an environment variable
   links_property: Enllaça a
   tags_property: Tags
   title_property: title
