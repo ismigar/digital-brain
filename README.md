@@ -65,6 +65,11 @@ Digital Brain is a powerful visualization tool that connects your Notion notes i
 
 2.  Ensure your Notion database has the expected properties (e.g., "Tags", "Note type", "Projects").
 
+3.  **Understanding the Similarity Filter**: The graph viewer includes a similarity filter (default: 70%) that controls which AI-inferred connections are displayed. You can adjust this in the sidebar:
+    - **70-100%**: Only strong AI connections (recommended for beginners).
+    - **30-70%**: Include moderate AI connections.
+    - **0-30%**: Show all AI connections (may include noise).
+
 ## 🏃 Usage
 
 ### 1. Run the Analysis Pipeline
@@ -74,23 +79,33 @@ This script fetches data from Notion, runs the AI/Tag analysis, and generates th
 python pipeline/suggest_connections_digital_brain.py
 ```
 
-### 2. Build the Frontend
-Compile the React application.
+### 2. Start the Application (Recommended)
+The easiest way to run both the backend and frontend is using the provided helper script:
 
 ```bash
-cd frontend
-npm run build
-cd ..
+./sh/run_brain.sh
 ```
 
-### 3. Start the Server
-Run the Flask server to serve the API and the frontend.
+This will:
+- Check for open ports and clear them if necessary.
+- Start the Flask backend.
+- Start the Vite frontend.
+- Provide you with the local URLs.
 
+### 3. Manual Start (Alternative)
+
+**Backend:**
 ```bash
 python backend/app.py
 ```
 
-Access your Digital Brain at `http://localhost:5001`.
+**Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+Access your Digital Brain at `http://localhost:5001` (or the port shown in the console).
 
 ## 📂 Project Structure
 
@@ -108,4 +123,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License. See `LICENSE` for more information.

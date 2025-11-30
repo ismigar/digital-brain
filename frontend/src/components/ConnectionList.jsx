@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { applyFilters } from '../utils/graphFilters';
 
 export const ConnectionList = ({ graphInstance, filters, isDarkMode }) => {
+    const { t } = useTranslation();
     const groupedConnections = useMemo(() => {
         if (!graphInstance) return [];
 
@@ -57,7 +59,7 @@ export const ConnectionList = ({ graphInstance, filters, isDarkMode }) => {
             borderRadius: '8px',
             padding: '20px'
         }}>
-            <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Connexions Visibles (Agrupades)</h3>
+            <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>{t('connections_title')}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {groupedConnections.map(group => (
                     <div key={group.id} style={{

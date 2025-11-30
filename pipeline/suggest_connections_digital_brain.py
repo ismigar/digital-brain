@@ -303,8 +303,8 @@ def build_tag_edges_from_nodes(nodes: list[dict], min_shared: int = 1) -> list[d
                     "target": b,
                     "evidence": ["tags_inferred"],
                     "via_tags": shared,
-                    "similarity": 100,
-                    "score": 1.0,
+                    "similarity": 99,
+                    "score": 0.99,
                     "reason": f"common tags: {', '.join(shared[:2])}"
                 })
     return edges
@@ -348,7 +348,7 @@ def tag_similarity(n1: dict, n2: dict, cfg) -> tuple[int, list[str]]:
             if top:
                 razones.append(f"Common concepts: {', '.join(top)}")
 
-    return min(score, 100), razones
+    return min(score, 99), razones
 
 def analyze_tags(note: dict, candidates: list[dict], threshold=None) -> list[dict]:
     if threshold is None:
@@ -621,7 +621,7 @@ def process():
 
             score = float(c.get("score", 0))
             score01 = score / 100.0 if score > 1.0 else score
-            similarity = int(round(score01 * 100))
+            similarity = min(int(round(score01 * 100)), 99)
 
             # Robust reason (accepts 'reason' from AI parser, 'razon' and 'razones' list)
             if isinstance(c.get("razones"), list) and c["razones"]:
@@ -667,7 +667,7 @@ def process():
 
             score = float(c.get("score", 0))
             score01 = score / 100.0 if score > 1.0 else score
-            similarity = int(round(score01 * 100))
+            similarity = min(int(round(score01 * 100)), 99)
 
             if isinstance(c.get("razones"), list) and c["razones"]:
                 reason = "; ".join(c["razones"])
@@ -812,7 +812,7 @@ def process():
             if not dst or src == dst:
                 continue
             score_f = float(it.get("score", 0.0))  # 0..1
-            similarity_i = int(round(score_f * 100))  # 0..100
+            similarity_i = min(int(round(score_f * 100)), 99)  # 0..99
             metodo = (it.get("metodo") or "").strip().lower()
             ev = ["tags"] if metodo == "tags" else ["ai"]
 

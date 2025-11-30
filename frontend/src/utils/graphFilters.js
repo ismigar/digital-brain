@@ -8,7 +8,8 @@ export function applyFilters(graph, filters) {
         hideIsolated = false,
         onlyIsolated = false,
         selectedNode = null,
-        depth = 1
+        depth = 1,
+        searchTerm = ""
     } = filters;
 
     const visibleNodes = new Set();
@@ -75,7 +76,17 @@ export function applyFilters(graph, filters) {
                     (projectFiltersLower.size === 0 || matchProject);
             } else {
                 const matchIsolated = !hideIsolated || !isIsolated;
-                isNodeVisible = matchCluster && matchKind && matchProject && matchIsolated;
+
+                // Search Term Filter
+                let matchSearch = true;
+                if (searchTerm && searchTerm.trim() !== "") {
+                    const term = searchTerm.toLowerCase().trim();
+                    const label = (attrs.label || "").toLowerCase();
+                    // You can extend this to search in other attributes if needed
+                    matchSearch = label.includes(term);
+                }
+
+                isNodeVisible = matchCluster && matchKind && matchProject && matchIsolated && matchSearch;
             }
 
             if (isNodeVisible) {
@@ -87,8 +98,13 @@ export function applyFilters(graph, filters) {
         graph.forEachEdge((edge, attrs, source, target) => {
             const sourceHidden = !visibleNodes.has(source);
             const targetHidden = !visibleNodes.has(target);
-            const sim = attrs.similarity ?? 100;
-            const isEdgeVisible = !sourceHidden && !targetHidden && sim >= similarity;
+            const sim = attrs.similarity !== undefined ? Number(attrs.similarity) : 100;
+            const filterSim = Number(similarity);
+            const isEdgeVisible = !sourceHidden && !targetHidden && sim >= filterSim;
+
+            if (filterSim === 100 && isEdgeVisible && sim < 100) {
+                console.log("BUG DETECTED: Edge visible with sim < 100", { edge, attrs, sim, filterSim });
+            }
 
             if (isEdgeVisible) {
                 visibleEdges.add(edge);

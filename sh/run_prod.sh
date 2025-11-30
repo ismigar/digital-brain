@@ -59,7 +59,7 @@ echo
 echo "🏗️  Building frontend..."
 cd "$FRONTEND_DIR"
 npm install >/dev/null 2>&1
-npm run build
+VITE_BASE_PATH=/ npm run build
 
 # 4) Run Backend (Gunicorn)
 echo "🚀 Starting server (Gunicorn)..."

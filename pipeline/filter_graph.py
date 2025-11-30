@@ -46,24 +46,33 @@ def filter_graph(data: Dict[str, Any], filters: Dict[str, Any] = None) -> tuple[
     # 1. Nodes: Pass all (visual filtering is handled in the frontend)
     filtered_nodes = nodes
     
-    # 2. Edges: Clean only noise (pure tags without other evidence)
+    # 2. Edges: Remove noise
     filtered_edges = []
     for e in edges:
         ev = [x.lower() for x in (e.get("evidence") or [])]
+        ev_set = set(ev)
         
-        # Exclude only *pure* "tag" type edges (source or target is a tag-node),
-        # but keep connections between notes suggested by tag coincidence.
-        # If "tags" is in evidence but nothing else (no ai, no explicit, no inferred...), remove.
-        if (
-            "tags" in ev
-            and not any(x in {"ai", "explicit", "inferred", "tags_inferred"} for x in ev)
-        ):
-            continue
-
+        # 1. Remove tag-to-tag connections (both source and target are tag nodes)
+        source_is_tag = e.get("source", "").startswith("tag::")
+        target_is_tag = e.get("target", "").startswith("tag::")
+        if source_is_tag and target_is_tag:
+            continue  # Skip tag-to-tag edges
+        
+        # 2. Remove pure tag coincidence edges
+        # These are edges created ONLY because notes share tags, with NO explicit or AI evidence
+        # Pattern: evidence contains 'tags_inferred' but NOT 'explicit' or 'ai'
+        if 'tags_inferred' in ev_set and not ('explicit' in ev_set or 'ai' in ev_set):
+            continue  # Skip tag coincidence without other evidence
+        
+        # 3. Keep tag-to-note connections (evidence=['tag'])
+        # These connect notes to their tag nodes for visual grouping
+        
         filtered_edges.append(e)
 
-    print(f"🧠 DEBUG filter_graph (Static Cleanup):")
+    removed = len(edges) - len(filtered_edges)
+    print(f"🧠 DEBUG filter_graph (Smart Cleanup):")
     print(f"   Nodes input: {len(nodes)}, output: {len(filtered_nodes)}")
     print(f"   Edges input: {len(edges)}, output: {len(filtered_edges)}")
+    print(f"   🗑️  Removed {removed} noisy edges ({removed/len(edges)*100:.1f}%)")
 
     return filtered_nodes, filtered_edges

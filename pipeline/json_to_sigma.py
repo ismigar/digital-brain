@@ -94,14 +94,38 @@ def convert_for_sigma(
                 "color": "default"  # We could extract the color if available
             }
 
-    TAG_EDGE_WEIGHT = 8.0
+    TAG_EDGE_WEIGHT = 0.2
+    
     for e in filtered_edges:
-        G.add_edge(e["source"], e["target"], weight=1.0)
-    # Tag edges are already included in filtered_edges from input JSON
-    # We don't need to create them here
+        # Determine weight based on evidence
+        weight = 0.5 # Default weak weight
+        
+        ev = [str(x).lower() for x in (e.get("evidence") or [])]
+        
+        if "explicit" in ev:
+            weight = 3.0 # Strong pull for explicit links
+        elif "ai" in ev:
+            # AI links: weight based on similarity
+            sim = float(e.get("similarity", 0) or 0)
+            if sim > 85:
+                weight = 1.5
+            elif sim > 70:
+                weight = 0.8
+            else:
+                weight = 0.3
+        elif "tags" in ev:
+            weight = 0.2 # Weak pull for tag coincidences
+            
+        # Check if it's a tag node connection (source or target is tag::...)
+        if e["source"].startswith("tag::") or e["target"].startswith("tag::"):
+             weight = 1.0 # Moderate pull for tag-to-note connections
 
-    print("🌸 Generating spring layout...")
-    positions = nx.spring_layout(G, k=0.8, iterations=150, seed=42, weight='weight')
+        G.add_edge(e["source"], e["target"], weight=weight)
+
+    print("🌸 Generating spring layout (High Repulsion)...")
+    # k=3.5 (much higher than 0.8) to force nodes apart
+    # iterations=200 for better convergence
+    positions = nx.spring_layout(G, k=3.5, iterations=200, seed=42, weight='weight')
 
     if positions:
         connected_components = list(nx.weakly_connected_components(G))
@@ -114,12 +138,13 @@ def convert_for_sigma(
                 positions = {k: (x - avg_x, y - avg_y) for k, (x, y) in positions.items()}
 
         max_abs_val = max(abs(coord) for pos in positions.values() for coord in pos) or 1.0
-        SCALING_FACTOR = 300
+        # SCALING_FACTOR=2000 to use more canvas space
+        SCALING_FACTOR = 2000
         positions = {
             k: (x / max_abs_val * SCALING_FACTOR, y / max_abs_val * SCALING_FACTOR)
             for k, (x, y) in positions.items()
         }
-        print("✅ Layout centered on main cluster and scaled to screen coordinates.")
+        print("✅ Layout centered and scaled (Spread Mode).")
 
     sigma_nodes = []
     for n in filtered_nodes:
@@ -168,20 +193,36 @@ def convert_for_sigma(
             )
         )
 
-        # --- Evidence and similarity (first EV) ---
-        if is_tag_edge:
-          ev = []
-          sim = 100.0
-        else:
-          ev = [str(x).lower() for x in (original_edge.get("evidence") or [])] if original_edge else []
-          sim = float(original_edge.get("similarity", 0) or 0) if original_edge else 0.0
+        # --- Evidence and similarity ---
+        # Get evidence from original edge (works for both tag and non-tag edges)
+        ev = [str(x).lower() for x in (original_edge.get("evidence") or [])] if original_edge else []
+        sim = float(original_edge.get("similarity", 0) or 0) if original_edge else 0.0
+        
+        # For tag edges without explicit evidence, override to empty
+        if is_tag_edge and not ev:
+            ev = []
+            sim = 100.0
 
         # --- Direction ---
         # Only add arrows if evidence contains "explicit"
         directed = "explicit" in ev
 
         # --- Style (colors + dashed) ---
-        if is_tag_edge:
+        # PRIORITY: Check for explicit evidence first, regardless of whether it's a tag edge
+        if "explicit" in ev:
+            # Explicit edges (including tag-to-note explicit edges) use explicit styling
+            stl = edge_style_by_evidence_and_similarity(ev, sim)
+            color = stl["color"]
+            kind = "explicit"
+            dashed = False
+            
+            # 🎯 Highlight explicit directed connections
+            if directed:
+                color = DIRECT_CONNECTION  # blue "Directed Connection"
+            
+            edge_type = "arrow" if directed else "line"
+        elif is_tag_edge:
+            # Non-explicit tag edges use tag styling
             stl = edge_style_by_evidence_and_similarity(["tags"])
             color = stl["color"]
             kind = "tag"
@@ -189,16 +230,11 @@ def convert_for_sigma(
             directed = False  # tag edges are not directed
             edge_type = "line"  # <- VALID TYPE FOR SIGMA
         else:
+            # Other inferred edges
             stl = edge_style_by_evidence_and_similarity(ev, sim)
             color = stl["color"]
-            kind = "explicit" if "explicit" in ev else "inferred"
+            kind = "inferred"
             dashed = bool(stl.get("dashes"))
-
-            # 🎯 Highlight explicit directed connections
-            if directed and "explicit" in ev:
-                color = DIRECT_CONNECTION  # blue "Directed Connection"
-
-            # 🔑 TYPE THAT SIGMA WILL SEE
             edge_type = "arrow" if directed else "line"
 
         # Get reasons from original edge if available

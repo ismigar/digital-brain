@@ -8,8 +8,13 @@ Hardcoded keys; not configurable via params.yaml.
 # Node Keys
 # -----------------------------------
 NODE_ID_KEYS = ["id", "page_id", "uuid", "ID", "key", "notion_id", "node_id"]
-NODE_TITLE_KEYS = ["Nota", "Name", "Títol", "Title", "Título", "Nom", "label", "title", "name", "text"]
-NODE_KIND_KEYS  = ["kind", "Tipus de nota", "type", "Tipus", "categoria", "class", "classe"]
+NODE_TITLE_KEYS = [
+    "Nota", "Name", "Títol", "Title", "Título", "Nom", "label", "title", "name", "text", "Titre"
+]
+NODE_KIND_KEYS  = [
+    "kind", "Tipus de nota", "type", "Tipus", "categoria", "class", "classe", 
+    "Tipo", "Tipo de nota", "Type", "Type de note", "Catégorie"
+]
 
 # -----------------------------------
 # Edge Keys
@@ -22,20 +27,42 @@ EDGE_ARRAY_KEYS = ["edges", "links", "relations", "connections", "enllacos", "en
 # -----------------------------------
 # Relation and Project Keys
 # -----------------------------------
-PROJECT_KEYS    = ["Projecte", "Projectes", "Project", "Projects", "Proyecto", "Proyectos"]
-LINKS_PROP_KEYS = ["Enllaça a", "Enlaza a", "Link to", "Links to", "Enlace a"]
+PROJECT_KEYS    = [
+    "Projecte", "Projectes", "Project", "Projects", "Proyecto", "Proyectos", "Projet", "Projets"
+]
+LINKS_PROP_KEYS = [
+    "Enllaça a", "Enlaza a", "Link to", "Links to", "Enlace a", "Lien vers", "Lie à", "Relacionado con"
+]
 
 # -----------------------------------
 # Semantic Mapping (Notion to Internal Types)
 # -----------------------------------
 SELECT_TO_KIND = {
+    # Català
     "nota permanent": "permanent",
     "permanent": "permanent",
     "nota de lectura": "lectura",
     "lectura": "lectura",
     "nota índex": "index",
-    "nota index": "index",
     "índex": "index",
+    "index": "index",
+
+    # Español
+    "nota permanente": "permanent",
+    "permanente": "permanent",
+    "nota índice": "index",
+    "índice": "index",
+
+    # English
+    "permanent note": "permanent",
+    "reading note": "lectura",
+    "literature note": "lectura",
+    "index note": "index",
+
+    # Français
+    "note permanente": "permanent",
+    "note de lecture": "lectura",
+    "note d'index": "index",
     "index": "index",
 }
 

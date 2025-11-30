@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const frontendPort = env.VITE_FRONTEND_PORT || "5173";
   return {
     plugins: [react()],
-    base: "https://ismigar.github.io/notion-digital-brain/",
+    base: env.VITE_BASE_PATH || "https://ismigar.github.io/notion-digital-brain/",
     server: {
       port: Number(frontendPort),
       proxy: {

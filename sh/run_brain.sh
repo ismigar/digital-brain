@@ -67,6 +67,7 @@ PY
 
 export VITE_BACKEND_PORT="$BACKEND_PORT"
 export VITE_FRONTEND_PORT="$FRONTEND_PORT"
+export VITE_BASE_PATH="/"
 
 echo "Ports: backend=$BACKEND_PORT · frontend=$FRONTEND_PORT"
 echo

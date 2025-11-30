@@ -29,6 +29,9 @@ if ENABLED_CORS:
     from flask_cors import CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+from backend.api.config_routes import config_bp
+app.register_blueprint(config_bp, url_prefix='/api')
+
 # ──────────────── ÚNICA RUTA /api/graph ────────────────
 @app.get("/api/graph")
 def api_graph():

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Layout } from './components/Layout';
 import { Sidebar } from './components/Sidebar';
 import { GraphViewer } from './components/GraphViewer';
@@ -6,17 +7,20 @@ import { Controls } from './components/Controls';
 import { Legend } from './components/Legend';
 import { Minimap } from './components/Minimap';
 import { ConnectionList } from './components/ConnectionList';
+import { SettingsModal } from './components/SettingsModal';
 import './viewer/style.css'; // Import legacy styles
 
 function App() {
+  const { t } = useTranslation();
   const [graphData, setGraphData] = useState(null);
   const [graphInstance, setGraphInstance] = useState(null);
   const [rendererInstance, setRendererInstance] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Filter State
   const [searchTerm, setSearchTerm] = useState("");
-  const [similarity, setSimilarity] = useState(30);
+  const [similarity, setSimilarity] = useState(70);
   const [hideIsolated, setHideIsolated] = useState(false);
   const [onlyIsolated, setOnlyIsolated] = useState(false);
   const [activeClusters, setActiveClusters] = useState(new Set());
@@ -27,18 +31,23 @@ function App() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [depth, setDepth] = useState(1);
 
+  const [config, setConfig] = useState(null);
+
   // Load Data
   useEffect(() => {
+    // Fetch Graph Data
     fetch('/api/graph')
       .then(res => res.json())
       .then(data => {
         setGraphData(data);
-        // Initialize filters with all enabled by default? Or empty means all?
-        // In viewer.js, empty set meant "no filter active" (show all), but specific logic:
-        // "matchKind = kindFiltersLower.size === 0 || kindFiltersLower.has(nodeKind)"
-        // So empty set is fine.
       })
       .catch(err => console.error("Error loading graph:", err));
+
+    // Fetch Config
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setConfig(data))
+      .catch(err => console.error("Error loading config:", err));
 
     // Dark mode listener
     const matcher = window.matchMedia('(prefers-color-scheme: dark)');
@@ -127,8 +136,9 @@ function App() {
     hideIsolated,
     onlyIsolated,
     selectedNode,
-    depth
-  }), [activeClusters, activeKinds, activeProjects, similarity, hideIsolated, onlyIsolated, selectedNode, depth]);
+    depth,
+    searchTerm
+  }), [activeClusters, activeKinds, activeProjects, similarity, hideIsolated, onlyIsolated, selectedNode, depth, searchTerm]);
 
 
   // Helper for Sidebar lists
@@ -187,6 +197,7 @@ function App() {
 
   return (
     <Layout
+      onOpenSettings={() => setIsSettingsOpen(true)}
       sidebar={
         <Sidebar
           searchTerm={searchTerm}
@@ -201,7 +212,7 @@ function App() {
           {/* ... sidebar sections ... */}
           <div className="section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h2 className="filter-title">Tipus de node</h2>
+              <h2 className="filter-title">{t('filter_by_kind')}</h2>
               {activeKinds.size > 0 && (
                 <button
                   onClick={() => clearAllFilters(setActiveKinds)}
@@ -222,7 +233,7 @@ function App() {
           </div>
           <div className="section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h2 className="filter-title">Tags</h2>
+              <h2 className="filter-title">{t('filter_by_cluster')}</h2>
               {activeClusters.size > 0 && (
                 <button
                   onClick={() => clearAllFilters(setActiveClusters)}
@@ -243,7 +254,7 @@ function App() {
           </div>
           <div className="section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h2 className="filter-title">Projectes</h2>
+              <h2 className="filter-title">{t('filter_by_project')}</h2>
               {activeProjects.size > 0 && (
                 <button
                   onClick={() => clearAllFilters(setActiveProjects)}
@@ -272,7 +283,7 @@ function App() {
                     {graphInstance ? (graphInstance.getNodeAttribute(selectedNode, 'label') || selectedNode) : selectedNode}
                   </strong>
                   <div className="depth-slider-container">
-                    <label htmlFor="depth-slider">Profunditat:</label>
+                    <label htmlFor="depth-slider">{t('depth_filter')}:</label>
                     <input
                       type="range"
                       id="depth-slider"
@@ -299,7 +310,15 @@ function App() {
           onFullscreen={() => graphViewerRef.current?.fullscreen()}
         />
       }
-      containerStyle={{ overflowY: 'auto', display: 'block' }}
+      bottomPanel={
+        <div style={{
+          padding: '20px',
+          background: isDarkMode ? '#111' : '#f7f7f7'
+        }}>
+          <ConnectionList graphInstance={graphInstance} filters={filters} isDarkMode={isDarkMode} />
+        </div>
+      }
+      containerStyle={{ display: 'block' }}
     >
       <div style={{ height: '100%', position: 'relative', minHeight: '600px' }}>
         <GraphViewer
@@ -308,15 +327,31 @@ function App() {
           setGraphInstance={setGraphInstance}
           setRendererInstance={setRendererInstance}
           filters={filters}
-          onNodeClick={(node) => setSelectedNode(node)}
+          onNodeClick={(node) => setSelectedNode(prev => prev === node ? null : node)}
           isDarkMode={isDarkMode}
+          config={config}
         />
         <Legend graphData={graphData} isDarkMode={isDarkMode} />
-        <Minimap graph={graphInstance} mainRenderer={rendererInstance} isDarkMode={isDarkMode} />
+        <Legend graphData={graphData} isDarkMode={isDarkMode} />
+        <Minimap
+          graph={graphInstance}
+          mainRenderer={rendererInstance}
+          isDarkMode={isDarkMode}
+          onPanTo={(x, y, ratio) => graphViewerRef.current?.panTo(x, y, ratio)}
+          onPanToNode={(nodeId, ratio) => graphViewerRef.current?.panToNode(nodeId, ratio)}
+        />
       </div>
-      <div style={{ padding: '20px', background: isDarkMode ? '#111' : '#f7f7f7' }}>
-        <ConnectionList graphInstance={graphInstance} filters={filters} isDarkMode={isDarkMode} />
-      </div>
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => {
+          setIsSettingsOpen(false);
+          // Reload config to apply changes immediately
+          fetch('/api/config')
+            .then(res => res.json())
+            .then(data => setConfig(data))
+            .catch(err => console.error("Error reloading config:", err));
+        }}
+      />
     </Layout>
   );
 }

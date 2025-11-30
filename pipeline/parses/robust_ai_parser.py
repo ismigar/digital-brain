@@ -29,9 +29,9 @@ AI_MODEL_NAME = str(cfg.ai.get("model_name", "llama3.2"))
 MIN_SIM = int(cfg.ai.get("min_similarity", 65))
 
 # --- "reason" Validation ---
-MIN_REASON_WORDS = int(cfg.ai.get("min_reason_words", 8))
-MAX_REASON_WORDS = int(cfg.ai.get("max_reason_words", 20))
-MIN_CONTENT_WORDS = int(cfg.ai.get("min_content_words", 5))
+MIN_REASON_WORDS = int(cfg.ai.get("min_reason_words", 5))
+MAX_REASON_WORDS = int(cfg.ai.get("max_reason_words", 25))
+MIN_CONTENT_WORDS = int(cfg.ai.get("min_content_words", 3))
 
 _CONTENT_TOKEN_RE = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ']+", flags=re.UNICODE)
 
@@ -710,9 +710,9 @@ def analyze_ai(nota: dict, candidatos: list[dict], ids_ja_trobats: set[str]) -> 
         - similarity MUST be an integer 0-100 (no percentages, no floats).
         - Include ONLY entries with similarity >= {MIN_SIM}.
         - If there are NO connections >= {MIN_SIM}, return exactly: []
-        - Reason MUST be 3–20 words, concrete and human-readable. Avoid single-word labels like "Ètica".
+        - Reason MUST be 5–25 words, concrete and human-readable. Avoid single-word labels like "Ètica".
         - Write reasons in Catalan or Spanish and mention 1–2 specific overlapping concepts/tags.
-        - If any reason would be shorter than 3 words, DO NOT include that entry.
+        - If any reason would be shorter than 5 words, DO NOT include that entry.
         
         SOURCE NOTE:
         Title: {nota['titulo']}
@@ -798,7 +798,7 @@ def analyze_ai(nota: dict, candidatos: list[dict], ids_ja_trobats: set[str]) -> 
                 return connections
 
             if not out and not connections:
-                logger.warning("  ⚠ Attempt %d/%d: AI returned no valid connections. Raw preview: %s", 
+                logger.debug("  ℹ Attempt %d/%d: AI returned no valid connections. Raw preview: %s", 
                                attempt + 1, AI_MODEL_RETRIES + 1, response_text[:200].replace("\n", " "))
 
         except (requests.Timeout, requests.ConnectionError) as e:

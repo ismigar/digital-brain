@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function Sidebar({
     searchTerm,
@@ -11,14 +12,15 @@ export function Sidebar({
     onOnlyIsolatedChange,
     children
 }) {
+    const { t } = useTranslation();
     return (
         <>
             <div className="section">
-                <h2 className="filter-title">Cerca</h2>
+
                 <input
                     type="search"
                     id="search-input"
-                    placeholder="Cerca per títol o tag..."
+                    placeholder={t('search_placeholder')}
                     value={searchTerm}
                     onChange={(e) => onSearchChange(e.target.value)}
                 />
@@ -27,7 +29,7 @@ export function Sidebar({
             {children}
 
             <div className="section">
-                <h2 className="filter-title">Similitud d'arestes</h2>
+                <h2 className="filter-title">{t('similarity_score')}</h2>
                 <div className="similarity-filter">
                     <input
                         type="range"
@@ -38,7 +40,7 @@ export function Sidebar({
                         step="1"
                         onChange={(e) => onSimilarityChange(parseInt(e.target.value))}
                     />
-                    <label htmlFor="similarity-slider" id="similarity-label">Mínim: {similarity}%</label>
+                    <label htmlFor="similarity-slider" id="similarity-label">{t('similarity_score')}: {similarity}%</label>
                 </div>
             </div>
 
