@@ -68,7 +68,7 @@ delay_entre_notas: 0.1
 graph:
   default_height: 850px
   default_width: 100%
-logging_level: debug
+logging_level: info
 mail_from: null
 mail_to: null
 notion:
